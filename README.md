@@ -57,6 +57,7 @@ dependencies:
 
   # SQL
   sqflite: ^2.3.0
+  #https://pub.dev/packages/sqflite  
 
   # Paths
   path: ^1.9.0
@@ -64,9 +65,26 @@ dependencies:
   # Suporte extra por plataforma
   sqflite_common_ffi: ^2.3.3          # Desktop (Windows/Linux/macOS)
   sqflite_common_ffi_web: ^1.0.1      # Web (IndexedDB via WASM)
+  # https://pub.dev/packages/sqflite_common_ffi_web
 ```
 
 > Observação: você **não precisa** de `path_provider` para este exemplo específico, pois usamos `getDatabasesPath()` do `sqflite` em mobile/desktop e **IndexedDB** no Web (sem caminho). Se quiser armazenar o DB em outra pasta, aí sim `path_provider` pode ser útil.
+
+---
+
+O que é o `pubspec.yaml`?
+
+* É um arquivo de **configuração no formato YAML** (indentação por espaços, não tab).
+* Define **informações do projeto** (nome, versão, descrição, SDK mínima) e **dependências**.
+* O Flutter/Dart usa esse arquivo para baixar pacotes do repositório oficial [pub.dev](https://pub.dev).
+
+Quando você roda:
+
+```bash
+flutter pub get
+```
+
+O Flutter lê o `pubspec.yaml`, baixa as versões indicadas e gera um **`.dart_tool/package_config.json`** (que aponta as libs para o compilador).
 
 ---
 
@@ -90,7 +108,7 @@ web/
 
 ```dart
 class Pessoa {
-  final int? id;        // id opcional (gerado pelo SQLite via AUTOINCREMENT)
+  final int? id;
   final String nome;
   final int idade;
 
