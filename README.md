@@ -102,6 +102,62 @@ web/
 > No Web, é **obrigatório** ter `sqlite3.wasm` e `sqflite_sw.js` em `web/`.  
 > Como obter: `dart run sqflite_common_ffi_web:setup` (precisa do `git` no PATH) **ou** copie manualmente do cache do Pub.
 
+### 1. `lib/main.dart`
+
+* É o **código Dart** da aplicação Flutter.
+* Fica na pasta `lib/` porque é a convenção dos projetos Dart/Flutter.
+* Contém tudo: modelo (`Pessoa`), helper do banco (`DatabaseHelper`), UI (CRUD).
+
+---
+
+### 2. `web/index.html`
+
+* Arquivo base de **entrada no navegador** quando você compila para Web.
+* O Flutter gera um `index.html` padrão.
+* A linha `<base href="/">` é **fundamental** para o roteamento funcionar no navegador.
+  Sem isso, os assets (imagens, WASM, JS) podem não ser encontrados em builds no GitHub Pages, Vercel, etc.
+
+---
+
+### 3. `sqlite3.wasm`
+
+* É o **binário compilado em WebAssembly (WASM)** da biblioteca **SQLite**.
+
+* Como o navegador **não tem SQLite nativo**, o pacote `sqflite_common_ffi_web` precisa de um “SQLite em WebAssembly”.
+
+* Esse arquivo roda dentro do browser como se fosse o engine SQLite.
+
+* Ele é baixado automaticamente para a pasta `web/` quando você executa:
+
+  ```bash
+  dart run sqflite_common_ffi_web:setup
+  ```
+
+* Se der erro (por falta do `git` no PATH, por exemplo), você pode copiar manualmente do cache do Pub (`~/.pub-cache/hosted/pub.dev/sqflite_common_ffi_web-*/web/sqlite3.wasm`).
+
+---
+
+### 4. `sqflite_sw.js`
+
+* É um **JavaScript Shared Worker**.
+
+* O `sqflite_common_ffi_web` usa isso para:
+
+  * Fazer o SQLite rodar em uma **thread separada** no navegador;
+  * Permitir que **várias abas/janelas** compartilhem o mesmo banco (quando o browser suporta shared workers);
+  * Guardar os dados no **IndexedDB** (o “banco” interno do browser).
+
+* Assim como o `.wasm`, ele é criado pelo comando:
+
+  ```bash
+  dart run sqflite_common_ffi_web:setup
+  ```
+
+* Sem esse arquivo, o app Web compila, mas as chamadas ao banco vão falhar.
+* `sqlite3.wasm` → **motor SQLite** compilado em WebAssembly, necessário no navegador.
+* `sqflite_sw.js` → **worker JS** que gerencia o SQLite rodando em background no browser.
+* Ambos precisam estar na pasta `web/` do seu projeto para que o app Flutter Web consiga usar `sqflite_common_ffi_web`.
+
 ---
 
 ## Modelo `Pessoa`
