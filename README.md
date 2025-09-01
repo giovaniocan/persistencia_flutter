@@ -190,8 +190,115 @@ class Pessoa {
 }
 ```
 
-**Por que `id` é opcional?**  
-Para permitir `AUTOINCREMENT` no SQLite. Você insere sem `id` e o banco gera.
+### O que é uma classe?
+
+* **Classe** em Dart (ou em qualquer linguagem OO) é um **molde**, uma **definição** de como um objeto deve ser.
+* No caso, `Pessoa` é uma **classe de modelo** (ou *Model*), usada para representar uma entidade no seu domínio — aqui, uma pessoa no banco de dados.
+
+---
+
+### O que são atributos?
+
+* **Atributos** (ou *propriedades*) são as **características** que um objeto tem.
+* São declarados como variáveis **dentro da classe**.
+* No seu modelo:
+
+```dart
+final int? id;    // identificador único (pode ser nulo)
+final String nome; // nome da pessoa
+final int idade;   // idade da pessoa
+```
+
+* `id`, `nome` e `idade` são **atributos**.
+* Cada instância de `Pessoa` terá valores próprios para esses atributos.
+
+---
+
+### Por que `id` é opcional (`int?`)?
+
+* O `?` indica que a variável pode ser **nula**.
+* Isso é importante porque:
+
+  * No SQLite, se você define `id INTEGER PRIMARY KEY AUTOINCREMENT`, o banco gera o **id automaticamente**.
+  * Então, quando você cria um objeto novo para inserir, você não precisa fornecer `id`.
+  * Mas quando o objeto vem do banco, ele **já terá um id atribuído**.
+
+Exemplo:
+
+```dart
+// Criando uma nova pessoa para inserir no banco
+Pessoa p1 = Pessoa(nome: 'Maria', idade: 25);
+
+// Pessoa recuperada do banco, já com id
+Pessoa p2 = Pessoa(id: 3, nome: 'João', idade: 40);
+```
+
+---
+
+### Métodos na classe `Pessoa`
+
+Além dos atributos, a classe também tem **métodos utilitários**:
+
+1. **Construtor**
+
+   ```dart
+   const Pessoa({this.id, required this.nome, required this.idade});
+   ```
+
+   * Cria novas instâncias da classe.
+   * `required` obriga a passar `nome` e `idade`.
+
+2. **copyWith**
+
+   ```dart
+   Pessoa copyWith({int? id, String? nome, int? idade})
+   ```
+
+   * Cria uma **cópia** do objeto, alterando só o que você quiser.
+   * Muito usado para manter a imutabilidade.
+
+   Exemplo:
+
+   ```dart
+   var p = Pessoa(id: 1, nome: 'Ana', idade: 20);
+   var p2 = p.copyWith(idade: 21); // copia mas muda a idade
+   ```
+
+3. **toMap**
+
+   ```dart
+   Map<String, dynamic> toMap()
+   ```
+
+   * Transforma o objeto em um `Map` (chave/valor).
+   * Necessário para inserir no SQLite.
+
+   Exemplo:
+
+   ```dart
+   Pessoa(nome: 'Carlos', idade: 30).toMap()
+   // => {nome: Carlos, idade: 30}
+   ```
+
+4. **fromMap**
+
+   ```dart
+   factory Pessoa.fromMap(Map<String, dynamic> map)
+   ```
+
+   * Faz o inverso: cria um objeto `Pessoa` a partir de um `Map` que veio do banco.
+
+   Exemplo:
+
+   ```dart
+   Pessoa.fromMap({'id': 2, 'nome': 'Lúcia', 'idade': 27})
+   // => Pessoa(id: 2, nome: Lúcia, idade: 27)
+   ```
+
+* **Classe `Pessoa`** → Modelo de dados.
+* **Atributos** → `id`, `nome`, `idade` (características da pessoa).
+* **Métodos** → utilitários para criar cópias (`copyWith`), converter para/desde `Map` (necessário no SQLite).
+* **Id opcional (`int?`)** → permite que o SQLite gere o identificador automaticamente.
 
 ---
 
