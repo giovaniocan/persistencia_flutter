@@ -686,3 +686,36 @@ Depois `flutter clean` e `flutter pub get`.
 Se não usa `path_provider`, remova o import/dep. Caso use, adicione no `pubspec.yaml` e rode `flutter pub get`.
 
 ---
+
+## Diagramas UML – Projeto Flutter (SQLite + CRUD)
+
+Este documento apresenta dois diagramas UML gerados a partir do código do app de **persistência local** em Flutter:
+
+1. **Diagrama de Classes** – mostra as entidades principais (`Pessoa`, `DatabaseHelper`) e a camada de UI (`PessoasApp`, `PessoasPage`, `_PessoasPageState`).
+2. **Diagrama de Sequência** – ilustra o fluxo do método `_salvar()`, desde a ação do usuário até a persistência no banco.
+
+---
+
+### Diagrama de Classes
+
+Representa as classes, atributos, métodos e relações entre:
+
+- **Modelo (`Pessoa`)**
+- **Persistência (`DatabaseHelper`)**
+- **UI (Widgets Flutter)**
+
+![Diagrama de Classes](./uml.svg)
+
+---
+
+### Diagrama de Sequência
+
+Representa o fluxo de execução do método **_salvar()**, que:
+
+1. Valida os dados do formulário.
+2. Decide entre **INSERT** ou **UPDATE** no banco.
+3. Atualiza a interface (FutureBuilder) e mostra feedback via SnackBar.
+
+![Diagrama de Sequência](./uml2.svg)
+
+---
