@@ -512,6 +512,132 @@ openDatabase(
 
 > **Nunca** diminua a versão; crie passos incrementais. Evite `DROP TABLE` sem backup.
 
+### O que são migrações de banco?
+
+* São **alterações controladas no schema** (estrutura) do banco de dados.
+* Cada vez que você muda sua tabela (adiciona colunas, cria novas tabelas, altera índices), é preciso **versão nova** para que o app atualize o banco sem apagar os dados antigos.
+
+---
+
+### Como funciona no `sqflite`
+
+Ao abrir o banco com `openDatabase`, você define:
+
+* **`version`** → número inteiro que representa a versão atual do schema.
+* **`onCreate`** → chamado quando o banco é criado pela 1ª vez.
+* **`onUpgrade`** → chamado quando o banco já existe, mas a versão é **menor que a atual**.
+* **`onDowngrade`** → chamado quando a versão do banco é **maior que a atual** (evite precisar disso).
+
+Exemplo prático:
+
+```dart
+Future<Database> _initDB() async {
+  final dbDir = await getDatabasesPath();
+  final path = p.join(dbDir, 'meu_banco.db');
+
+  return openDatabase(
+    path,
+    version: 2, // <- aumentou de 1 para 2
+    onCreate: _onCreate,
+    onUpgrade: (db, oldV, newV) async {
+      if (oldV < 2) {
+        // migração da versão 1 -> 2
+        await db.execute('ALTER TABLE pessoas ADD COLUMN email TEXT');
+      }
+    },
+  );
+}
+
+Future<void> _onCreate(Database db, int version) async {
+  await db.execute('''
+    CREATE TABLE pessoas(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      idade INTEGER NOT NULL
+    )
+  ''');
+}
+```
+
+---
+
+### Boas práticas
+
+1. **Sempre aumentar a versão**
+
+   * Se você muda a estrutura do banco, **incremente `version`**.
+   * Exemplo: começou com `version: 1`, depois `2`, `3`, etc.
+
+2. **Nunca diminuir a versão**
+
+   * Isso gera problemas e geralmente aciona `onDowngrade`.
+   * Em produção, evite ao máximo.
+
+3. **Crie migrações incrementais**
+
+   * Verifique o `oldV` e vá aplicando apenas os passos necessários.
+   * Isso garante que alguém que ficou com o app parado na versão 1, ao atualizar direto para 3, passe por todas as migrações.
+
+   ```dart
+   onUpgrade: (db, oldV, newV) async {
+     if (oldV < 2) {
+       await db.execute('ALTER TABLE pessoas ADD COLUMN email TEXT');
+     }
+     if (oldV < 3) {
+       await db.execute('ALTER TABLE pessoas ADD COLUMN telefone TEXT');
+     }
+   },
+   ```
+
+4. **Evite `DROP TABLE` sem backup**
+
+   * Usar `DROP TABLE` ou recriar tabelas apaga dados do usuário.
+   * Se for inevitável, crie um backup:
+
+     * Renomeie a tabela antiga.
+     * Crie a nova tabela.
+     * Migre os dados com `INSERT INTO nova SELECT ... FROM antiga`.
+     * Apague a tabela antiga.
+
+---
+
+### Exemplo de migração segura
+
+Digamos que a versão 1 tinha:
+
+```sql
+CREATE TABLE pessoas(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  idade INTEGER NOT NULL
+)
+```
+
+Na versão 2, você adiciona `email`:
+
+```dart
+if (oldV < 2) {
+  await db.execute('ALTER TABLE pessoas ADD COLUMN email TEXT');
+}
+```
+
+Na versão 3, você cria nova tabela `enderecos`:
+
+```dart
+if (oldV < 3) {
+  await db.execute('''
+    CREATE TABLE enderecos(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pessoa_id INTEGER NOT NULL,
+      rua TEXT,
+      FOREIGN KEY(pessoa_id) REFERENCES pessoas(id)
+    )
+  ''');
+}
+```
+
+Assim, **quem pula da versão 1 → 3** vai executar os dois blocos (`< 2` e `< 3`).
+
 ---
 
 ## Desempenho & Boas práticas
@@ -558,15 +684,5 @@ Depois `flutter clean` e `flutter pub get`.
 
 **6) `Target of URI doesn't exist: path_provider`**  
 Se não usa `path_provider`, remova o import/dep. Caso use, adicione no `pubspec.yaml` e rode `flutter pub get`.
-
----
-
-## Extensões & Próximos passos
-
-- **DAO/Repository**: separe interfaces para facilitar testes/mocks e camadas.  
-- **Filtros/Busca**: crie métodos com `where`/`whereArgs`.  
-- **Paginação**: use `limit`/`offset` no `query`.  
-- **Sincronização remota**: combine com uma fonte remota (ex.: Firestore/REST) e reconcilie mudanças.  
-- **Validações avançadas**: checagens de duplicidade, constraints únicas etc.
 
 ---
